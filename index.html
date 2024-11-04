@@ -266,7 +266,7 @@
     <div class="status-message" id="statusMessage"></div>
 
     <script>
-      // Constants and state
+  // Constants and state
 const ADMIN_PASSWORD = "12345";
 let currentVideoId = null;
 
@@ -277,35 +277,16 @@ function extractGoogleDriveFileId(url) {
     return match ? match[1] : null;
 }
 
-// Save movie data to localStorage
-function saveMovieData(title, videoId) {
-    const movieData = {
-        title: title,
-        videoId: videoId
-    };
-    localStorage.setItem('movieData', JSON.stringify(movieData));
-}
-
-// Load movie data from localStorage
-// Modify the loadMovieData function
-// Load movie data from localStorage
+// Load movie data from URL parameters
 function loadMovieData() {
-    // Set your uploaded video ID and title here
-    const defaultVideoId = '17BsonLxH8XbroDNo824-PnoXbjTOZsQB'; // Replace with your video ID
-    const defaultTitle = 'Tinchlik 😕';
-    
-    // First set the default video
-    document.getElementById('movie-title').textContent = defaultTitle;
-    document.getElementById('movie-player').src = `https://drive.google.com/file/d/${defaultVideoId}/preview`;
-    currentVideoId = defaultVideoId;
-    
-    // Then check if there's a newer video in localStorage
-    const savedData = localStorage.getItem('movieData');
-    if (savedData) {
-        const movieData = JSON.parse(savedData);
-        document.getElementById('movie-title').textContent = movieData.title;
-        document.getElementById('movie-player').src = `https://drive.google.com/file/d/${movieData.videoId}/preview`;
-        currentVideoId = movieData.videoId;
+    const urlParams = new URLSearchParams(window.location.search);
+    const videoId = urlParams.get('video');
+    const title = urlParams.get('title');
+
+    if (videoId && title) {
+        document.getElementById('movie-title').textContent = decodeURIComponent(title);
+        document.getElementById('movie-player').src = `https://drive.google.com/file/d/${videoId}/preview`;
+        currentVideoId = videoId;
     }
 }
 
@@ -315,7 +296,8 @@ function deleteMovie() {
         document.getElementById('movie-title').textContent = 'No movie playing right now';
         document.getElementById('movie-player').src = '';
         currentVideoId = null;
-        localStorage.removeItem('movieData');
+        // Remove parameters from URL
+        window.history.pushState({}, '', window.location.pathname);
         showMessage('Movie deleted successfully! 🗑️');
     }
 }
@@ -336,11 +318,12 @@ function updateMovie() {
         return;
     }
 
+    // Update the URL with the new movie data
+    const newURL = `${window.location.pathname}?title=${encodeURIComponent(newTitle)}&video=${currentVideoId}`;
+    window.history.pushState({}, '', newURL);
+
     document.getElementById('movie-title').textContent = newTitle;
     document.getElementById('movie-player').src = `https://drive.google.com/file/d/${currentVideoId}/preview`;
-    
-    // Save to localStorage
-    saveMovieData(newTitle, currentVideoId);
     
     // Clear inputs
     document.getElementById('new-title').value = '';
@@ -348,7 +331,16 @@ function updateMovie() {
     document.getElementById('admin-password').value = '';
     document.getElementById('admin-controls').style.display = 'none';
     
-    showMessage('Movie updated successfully! 🎬✨');
+    // Show success message with copy URL button
+    const shareUrl = window.location.href;
+    showMessage(`Movie updated! 🎬 Share this link with your friends!`);
+    
+    // Optional: Copy URL to clipboard
+    navigator.clipboard.writeText(shareUrl).then(() => {
+        console.log('URL copied to clipboard');
+    }).catch(err => {
+        console.error('Failed to copy URL:', err);
+    });
 }
 
 // Admin password handler
@@ -379,6 +371,11 @@ window.addEventListener('load', loadMovieData);
 document.getElementById('movie-player').onerror = function() {
     showMessage('Error loading video. Please check the URL and try again! 🎥');
 };
+
+// Optional: Handle back/forward browser navigation
+window.addEventListener('popstate', function() {
+    loadMovieData();
+});
     </script>
 </body>
 </html>
