@@ -238,16 +238,16 @@
             </div>
         </div>
 
-        <div class="movie-container">
-            <h2 id="movie-title">Tinchlik 😕</h2>
-            <div class="video-container">
-                <iframe id="movie-player" 
-                        src=""
-                        allowfullscreen
-                        allow="autoplay">
-                </iframe>
-            </div>
-        </div>
+<div class="movie-container">
+    <h2 id="movie-title">Tinchlik 😕</h2>
+    <div class="video-container">
+        <iframe id="movie-player" 
+                src="https://drive.google.com/file/d/YOUR_GOOGLE_DRIVE_VIDEO_ID/preview"
+                allowfullscreen
+                allow="autoplay">
+        </iframe>
+    </div>
+</div>
 
 <div class="admin-panel">
     <h3>Admin Controls</h3>
@@ -287,6 +287,7 @@ function saveMovieData(title, videoId) {
 }
 
 // Load movie data from localStorage
+// Modify the loadMovieData function
 function loadMovieData() {
     const savedData = localStorage.getItem('movieData');
     if (savedData) {
@@ -294,6 +295,13 @@ function loadMovieData() {
         document.getElementById('movie-title').textContent = movieData.title;
         document.getElementById('movie-player').src = `https://drive.google.com/file/d/${movieData.videoId}/preview`;
         currentVideoId = movieData.videoId;
+    } else {
+        // Set default movie - replace with your movie ID and title
+        const defaultVideoId = 'YOUR_GOOGLE_DRIVE_VIDEO_ID';
+        const defaultTitle = 'Tinchlik 😕';
+        document.getElementById('movie-title').textContent = defaultTitle;
+        document.getElementById('movie-player').src = `https://drive.google.com/file/d/${defaultVideoId}/preview`;
+        currentVideoId = defaultVideoId;
     }
 }
 
