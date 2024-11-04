@@ -241,11 +241,11 @@
 <div class="movie-container">
     <h2 id="movie-title">Tinchlik 😕</h2>
     <div class="video-container">
-        <iframe id="movie-player" 
-                src="https://drive.google.com/file/d/YOUR_GOOGLE_DRIVE_VIDEO_ID/preview"
-                allowfullscreen
-                allow="autoplay">
-        </iframe>
+<iframe id="movie-player" 
+        src="https://drive.google.com/file/d/17BsonLxH8XbroDNo824-PnoXbjTOZsQB/preview"
+        allowfullscreen
+        allow="autoplay">
+</iframe>
     </div>
 </div>
 
@@ -288,20 +288,24 @@ function saveMovieData(title, videoId) {
 
 // Load movie data from localStorage
 // Modify the loadMovieData function
+// Load movie data from localStorage
 function loadMovieData() {
+    // Set your uploaded video ID and title here
+    const defaultVideoId = '17BsonLxH8XbroDNo824-PnoXbjTOZsQB'; // Replace with your video ID
+    const defaultTitle = 'Tinchlik 😕';
+    
+    // First set the default video
+    document.getElementById('movie-title').textContent = defaultTitle;
+    document.getElementById('movie-player').src = `https://drive.google.com/file/d/${defaultVideoId}/preview`;
+    currentVideoId = defaultVideoId;
+    
+    // Then check if there's a newer video in localStorage
     const savedData = localStorage.getItem('movieData');
     if (savedData) {
         const movieData = JSON.parse(savedData);
         document.getElementById('movie-title').textContent = movieData.title;
         document.getElementById('movie-player').src = `https://drive.google.com/file/d/${movieData.videoId}/preview`;
         currentVideoId = movieData.videoId;
-    } else {
-        // Set default movie - replace with your movie ID and title
-        const defaultVideoId = 'YOUR_GOOGLE_DRIVE_VIDEO_ID';
-        const defaultTitle = 'Tinchlik 😕';
-        document.getElementById('movie-title').textContent = defaultTitle;
-        document.getElementById('movie-player').src = `https://drive.google.com/file/d/${defaultVideoId}/preview`;
-        currentVideoId = defaultVideoId;
     }
 }
 
