@@ -6,7 +6,6 @@
     <title>🎬 Movie Night Hub! 🍿</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        /* All existing styles remain exactly the same */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -230,9 +229,154 @@
             }
         }
     </style>
+    <script>
+        const STORAGE_KEY = 'movieNightHub_v2';
+        let currentVideoId = null;
+
+        function saveMovieData(title, videoId) {
+            const movieData = {
+                title: title,
+                videoId: videoId,
+                timestamp: Date.now()
+            };
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(movieData));
+                fetch('https://api.jsonbin.io/v3/b/YOUR_BIN_ID', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Master-Key': 'YOUR_API_KEY'
+                    },
+                    body: JSON.stringify(movieData)
+                });
+            } catch (error) {
+                console.error('Error saving movie data:', error);
+            }
+        }
+
+        function loadMovieData() {
+            try {
+                const savedData = localStorage.getItem(STORAGE_KEY);
+                if (savedData) {
+                    const movieData = JSON.parse(savedData);
+                    updateMovieDisplay(movieData.title, movieData.videoId);
+                }
+                
+                // Also fetch from JSONBin
+                fetch('https://api.jsonbin.io/v3/b/YOUR_BIN_ID/latest', {
+                    headers: {
+                        'X-Master-Key': 'YOUR_API_KEY'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.record) {
+                        const movieData = data.record;
+                        updateMovieDisplay(movieData.title, movieData.videoId);
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(movieData));
+                    }
+                })
+                .catch(error => console.error('Error fetching movie data:', error));
+            } catch (error) {
+                console.error('Error loading movie data:', error);
+            }
+        }
+
+        function updateMovie() {
+            const newTitle = document.getElementById('new-title').value;
+            const newUrl = document.getElementById('new-url').value;
+            
+            if (!newTitle || !newUrl) {
+                showMessage('Please enter both title and URL! 🎯');
+                return;
+            }
+
+            const videoId = extractGoogleDriveFileId(newUrl);
+            if (!videoId) {
+                showMessage('Invalid Google Drive URL! Please check the link 🔍');
+                return;
+            }
+
+            saveMovieData(newTitle, videoId);
+            updateMovieDisplay(newTitle, videoId);
+
+            // Clear inputs
+            document.getElementById('new-title').value = '';
+            document.getElementById('new-url').value = '';
+            document.getElementById('admin-password').value = '';
+            document.getElementById('admin-controls').style.display = 'none';
+            
+            showMessage('Movie updated successfully! 🎬✨');
+        }
+
+        function deleteMovie() {
+            if (confirm('Are you sure you want to delete this movie?')) {
+                try {
+                    localStorage.removeItem(STORAGE_KEY);
+                    updateMovieDisplay('No movie playing right now', null);
+                    
+                    // Also delete from JSONBin
+                    fetch('https://api.jsonbin.io/v3/b/YOUR_BIN_ID', {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Master-Key': 'YOUR_API_KEY'
+                        },
+                        body: JSON.stringify({ title: 'No movie playing right now', videoId: null })
+                    });
+                    
+                    showMessage('Movie deleted successfully! 🗑️');
+                } catch (error) {
+                    console.error('Error deleting movie:', error);
+                    showMessage('Error deleting movie! Please try again.');
+                }
+            }
+        }
+
+        function updateMovieDisplay(title, videoId) {
+            document.getElementById('movie-title').textContent = title;
+            document.getElementById('movie-player').src = videoId ? 
+                `https://drive.google.com/file/d/${videoId}/preview` : '';
+            currentVideoId = videoId;
+        }
+
+        function extractGoogleDriveFileId(url) {
+            const regex = /\/d\/(.*?)(\/?$|\/view|\?|&)/;
+            const match = url.match(regex);
+            return match ? match[1] : null;
+        }
+
+        function showMessage(message) {
+            const statusMessage = document.getElementById('statusMessage');
+            statusMessage.textContent = message;
+            statusMessage.classList.add('show');
+            setTimeout(() => {
+                statusMessage.classList.remove('show');
+            }, 3000);
+        }
+
+        // Check for updates every 10 seconds
+        setInterval(loadMovieData, 10000);
+
+        // Admin password handler
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('admin-password').addEventListener('input', function(e) {
+                const adminControls = document.getElementById('admin-controls');
+                if (e.target.value === "12345") {
+                    adminControls.style.display = 'block';
+                    showMessage('Admin access granted! 🎉');
+                } else {
+                    adminControls.style.display = 'none';
+                }
+            });
+
+            // Load initial movie data
+            loadMovieData();
+        });
+    </script>
 </head>
 <body>
-   <div class="stars"></div>
+    <div class="stars"></div>
     <div class="container">
         <div class="header">
             <h1>Movie Night Hub</h1>
@@ -271,115 +415,5 @@
     </div>
 
     <div class="status-message" id="statusMessage"></div>
-    <script>
-      // Check for movie updates every 5 seconds
-        setInterval(checkForMovieUpdates, 5000);
-
-        let lastUpdate = 0;
-        const STORAGE_KEY = 'movieNightHub';
-
-        function saveMovieData(title, videoId) {
-            const movieData = {
-                title: title,
-                videoId: videoId,
-                timestamp: Date.now()
-            };
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(movieData));
-            lastUpdate = movieData.timestamp;
-        }
-
-        function loadMovieData() {
-            const savedData = localStorage.getItem(STORAGE_KEY);
-            if (savedData) {
-                const movieData = JSON.parse(savedData);
-                updateMovieDisplay(movieData.title, movieData.videoId);
-                lastUpdate = movieData.timestamp;
-            }
-        }
-
-        function checkForMovieUpdates() {
-            const savedData = localStorage.getItem(STORAGE_KEY);
-            if (savedData) {
-                const movieData = JSON.parse(savedData);
-                if (movieData.timestamp > lastUpdate) {
-                    updateMovieDisplay(movieData.title, movieData.videoId);
-                    lastUpdate = movieData.timestamp;
-                }
-            }
-        }
-
-        function updateMovie() {
-            const newTitle = document.getElementById('new-title').value;
-            const newUrl = document.getElementById('new-url').value;
-            
-            if (!newTitle || !newUrl) {
-                showMessage('Please enter both title and URL! 🎯');
-                return;
-            }
-
-            const videoId = extractGoogleDriveFileId(newUrl);
-            if (!videoId) {
-                showMessage('Invalid Google Drive URL! Please check the link 🔍');
-                return;
-            }
-
-            saveMovieData(newTitle, videoId);
-            updateMovieDisplay(newTitle, videoId);
-
-            // Clear inputs
-            document.getElementById('new-title').value = '';
-            document.getElementById('new-url').value = '';
-            document.getElementById('admin-password').value = '';
-            document.getElementById('admin-controls').style.display = 'none';
-            
-            showMessage('Movie updated successfully! 🎬✨\nYour friends can now see it when they visit!');
-        }
-
-        function deleteMovie() {
-            if (confirm('Are you sure you want to delete this movie?')) {
-                localStorage.removeItem(STORAGE_KEY);
-                updateMovieDisplay('No movie playing right now', null);
-                showMessage('Movie deleted successfully! 🗑️');
-            }
-        }
-
-        function updateMovieDisplay(title, videoId) {
-            document.getElementById('movie-title').textContent = title;
-            document.getElementById('movie-player').src = videoId ? 
-                `https://drive.google.com/file/d/${videoId}/preview` : '';
-            currentVideoId = videoId;
-        }
-
-        function extractGoogleDriveFileId(url) {
-            const regex = /\/d\/(.*?)(\/?$|\/view|\?|&)/;
-            const match = url.match(regex);
-            return match ? match[1] : null;
-        }
-
-        function showMessage(message) {
-            const statusMessage = document.getElementById('statusMessage');
-            statusMessage.textContent = message;
-            statusMessage.classList.add('show');
-            setTimeout(() => {
-                statusMessage.classList.remove('show');
-            }, 3000);
-        }
-
-        // Admin password handler
-        document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('admin-password').addEventListener('input', function(e) {
-                const adminControls = document.getElementById('admin-controls');
-                if (e.target.value === "12345") {
-                    adminControls.style.display = 'block';
-                    showMessage('Admin access granted! 🎉');
-                } else {
-                    adminControls.style.display = 'none';
-                }
-            });
-
-            // Load initial movie data
-            loadMovieData();
-        });
-    </script>
 </body>
 </html>
