@@ -164,6 +164,13 @@
             font-weight: bold;
         }
 
+.refresh-btn {
+    margin-top: 15px;
+    background: linear-gradient(45deg, #4ECDC4, #556270);
+    width: auto;
+    padding: 10px 20px;
+}
+
         button:hover {
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(78, 205, 196, 0.4);
@@ -230,9 +237,8 @@
         }
     </style>
     <script>
-const STORAGE_KEY = 'movieNightHub_v2';
+const STORAGE_KEY = 'movieNightHub_v3';
 let currentVideoId = null;
-let lastKnownVideoId = null;
 
 function saveMovieData(title, videoId) {
     const movieData = {
@@ -242,40 +248,11 @@ function saveMovieData(title, videoId) {
     };
     try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(movieData));
-        fetch('https://api.jsonbin.io/v3/b/6729d281ad19ca34f8c46d79', {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Master-Key': '$2a$10$xMF6LwsxmMIMkW9UpubmJ.CX72LInQu4RUXnyyTQXvM793VnZiQ56'
-            },
-            body: JSON.stringify(movieData)
-        });
+        showMessage('Movie updated successfully! 🎬✨ Tell your friends to refresh!');
     } catch (error) {
         console.error('Error saving movie data:', error);
+        showMessage('Error saving movie! Please try again.');
     }
-}
-
-function checkForUpdates() {
-    fetch('https://api.jsonbin.io/v3/b/6729d281ad19ca34f8c46d79', {
-        headers: {
-            'X-Master-Key': '$2a$10$xMF6LwsxmMIMkW9UpubmJ.CX72LInQu4RUXnyyTQXvM793VnZiQ56'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.record && data.record.videoId !== lastKnownVideoId) {
-            const movieData = data.record;
-            updateMovieDisplay(movieData.title, movieData.videoId);
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(movieData));
-            lastKnownVideoId = movieData.videoId;
-            
-            // Show notification for new movie
-            if (movieData.videoId) {
-                showMessage('New movie available! 🎬 Loading now...');
-            }
-        }
-    })
-    .catch(error => console.error('Error checking for updates:', error));
 }
 
 function loadMovieData() {
@@ -285,24 +262,6 @@ function loadMovieData() {
             const movieData = JSON.parse(savedData);
             updateMovieDisplay(movieData.title, movieData.videoId);
         }
-        
-        fetch('https://api.jsonbin.io/v3/b/6729d281ad19ca34f8c46d79', {
-            headers: {
-                'X-Master-Key': '$2a$10$xMF6LwsxmMIMkW9UpubmJ.CX72LInQu4RUXnyyTQXvM793VnZiQ56'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.record) {
-                const movieData = data.record;
-                updateMovieDisplay(movieData.title, movieData.videoId);
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(movieData));
-                if (movieData.videoId) {
-                    lastKnownVideoId = movieData.videoId;
-                }
-            }
-        })
-        .catch(error => console.error('Error fetching movie data:', error));
     } catch (error) {
         console.error('Error loading movie data:', error);
     }
@@ -331,8 +290,6 @@ function updateMovie() {
     document.getElementById('new-url').value = '';
     document.getElementById('admin-password').value = '';
     document.getElementById('admin-controls').style.display = 'none';
-    
-    showMessage('Movie updated successfully! 🎬✨');
 }
 
 function deleteMovie() {
@@ -340,17 +297,7 @@ function deleteMovie() {
         try {
             localStorage.removeItem(STORAGE_KEY);
             updateMovieDisplay('No movie playing right now', null);
-            
-            fetch('https://api.jsonbin.io/v3/b/6729d281ad19ca34f8c46d79', {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Master-Key': '$2a$10$xMF6LwsxmMIMkW9UpubmJ.CX72LInQu4RUXnyyTQXvM793VnZiQ56'
-                },
-                body: JSON.stringify({ title: 'No movie playing right now', videoId: null })
-            });
-            
-            showMessage('Movie deleted successfully! 🗑️');
+            showMessage('Movie deleted successfully! 🗑️ Tell your friends to refresh!');
         } catch (error) {
             console.error('Error deleting movie:', error);
             showMessage('Error deleting movie! Please try again.');
@@ -362,12 +309,20 @@ function updateMovieDisplay(title, videoId) {
     document.getElementById('movie-title').textContent = title;
     const player = document.getElementById('movie-player');
     if (videoId) {
-        player.src = `https://drive.google.com/file/d/${videoId}/preview`;
+        // Added quality parameter for data saving
+        player.src = `https://drive.google.com/file/d/${videoId}/preview?quality=medium`;
     } else {
         player.src = '';
     }
     currentVideoId = videoId;
-    lastKnownVideoId = videoId;
+}
+
+function changeQuality(quality) {
+    const player = document.getElementById('movie-player');
+    if (currentVideoId) {
+        player.src = `https://drive.google.com/file/d/${currentVideoId}/preview?quality=${quality}`;
+        showMessage(`Quality changed to ${quality} 🎥`);
+    }
 }
 
 function extractGoogleDriveFileId(url) {
@@ -398,11 +353,18 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // Add refresh button to the page
+    const refreshButton = document.createElement('button');
+    refreshButton.innerHTML = '🔄 Check for New Movies';
+    refreshButton.onclick = function() {
+        location.reload();
+        showMessage('Checking for new movies... 🎬');
+    };
+    refreshButton.className = 'refresh-btn';
+    document.querySelector('.movie-container').appendChild(refreshButton);
+
     // Load initial movie data
     loadMovieData();
-    
-    // Start checking for updates (every 2 seconds)
-    setInterval(checkForUpdates, 2000);
 });
     </script>
 </head>
