@@ -241,11 +241,11 @@
             };
             try {
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(movieData));
-                fetch('https://api.jsonbin.io/v3/b/YOUR_BIN_ID', {
+                fetch('https://api.jsonbin.io/v3/b/6729d281ad19ca34f8c46d79', {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-Master-Key': 'YOUR_API_KEY'
+                        'X-Master-Key': '$2a$10$xMF6LwsxmMIMkW9UpubmJ.CX72LInQu4RUXnyyTQXvM793VnZiQ56'
                     },
                     body: JSON.stringify(movieData)
                 });
